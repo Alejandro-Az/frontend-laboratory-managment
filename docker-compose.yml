@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        # URL de la API en producción.
+        # En desarrollo Docker apunta al contenedor backend por nombre de servicio.
+        # En producción apunta al dominio real del backend.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    restart: unless-stopped
+
+# Para conectar con el backend en el mismo docker-compose:
+#
+#   services:
+#     frontend:
+#       ...
+#       depends_on:
+#         - backend
+#       environment:           # ← NO sirve para VITE_*, usar build.args
+#         VITE_API_BASE_URL: http://backend:8000/api/v1
+#
+# Las variables VITE_* se embeben en el bundle al hacer build,
+# por eso van en build.args y no en environment.
