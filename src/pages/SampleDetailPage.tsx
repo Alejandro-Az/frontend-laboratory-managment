@@ -116,7 +116,7 @@ export function SampleDetailPage() {
                     <span>{formatDateTime(r.analyzed_at)}</span>
                   </div>
                   <p className="text-sm text-gray-700">{r.result_summary}</p>
-                  {Object.keys(r.result_data).length > 0 && (
+                  {r.result_data && Object.keys(r.result_data).length > 0 && (
                     <details className="mt-2">
                       <summary className="text-xs text-blue-600 cursor-pointer">Ver datos</summary>
                       <pre className="mt-2 text-xs bg-gray-50 rounded p-3 overflow-auto">
