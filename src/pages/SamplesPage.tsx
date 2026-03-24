@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { getSamples, createSample, deleteSample } from '@/api/samples'
+import { getSamples, createSample, deleteSample, updateSampleNotes } from '@/api/samples'
 import { getClients } from '@/api/clients'
 import { getProjects } from '@/api/projects'
 import type { SampleListItem, SampleStatus, SamplePriority, Client, Project, SampleCreatePayload } from '@/types'
@@ -37,6 +37,7 @@ export function SamplesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<SampleListItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<SampleListItem | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -246,7 +247,7 @@ export function SamplesPage() {
                           </Link>
                           {isAdmin && (
                             <>
-                              <button className="hover:text-amber-500" title="Editar">
+                              <button onClick={() => setEditTarget(s)} className="hover:text-amber-500" title="Editar notas">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                               </button>
                               <button
@@ -285,6 +286,14 @@ export function SamplesPage() {
           clients={clients}
           onClose={() => setModalOpen(false)}
           onSaved={() => { setModalOpen(false); load() }}
+        />
+      )}
+
+      {editTarget && (
+        <EditNotesModal
+          sample={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => { setEditTarget(null); load() }}
         />
       )}
 
@@ -479,3 +488,57 @@ function SampleCreateModal({
   )
 }
 
+function EditNotesModal({
+  sample,
+  onClose,
+  onSaved,
+}: {
+  sample: SampleListItem
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [notes, setNotes] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      await updateSampleNotes(sample.id, notes)
+      onSaved()
+    } catch {
+      setError('Error al guardar las notas.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal title={`Notas — ${sample.code}`} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={4}
+          placeholder="Escribe las notas de esta muestra..."
+          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+          >
+            {loading ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
